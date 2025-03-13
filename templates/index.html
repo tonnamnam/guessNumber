@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมทายตัวเลข</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&family=Kanit:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>เกมทายตัวเลข</h1>
+        
+        <div class="difficulty-section">
+            <label for="difficulty">เลือกระดับความยาก:</label>
+            <select id="difficulty">
+                <option value="easy">ง่าย (10 ครั้ง)</option>
+                <option value="medium" selected>ปานกลาง (7 ครั้ง)</option>
+                <option value="hard">ยาก (5 ครั้ง)</option>
+            </select>
+            <button onclick="startGame()">เริ่มเกมใหม่</button>
+        </div>
+        
+        <div id="status">กรุณากดปุ่ม "เริ่มเกมใหม่" เพื่อเริ่มเล่น</div>
+        
+        <div class="range-display">
+            <span id="min-range">1</span>
+            <span id="max-range">100</span>
+        </div>
+        <div class="range-bar"></div>
+        
+        <div id="game-controls" style="display: none;">
+            <input type="number" id="guessInput" placeholder="ใส่ตัวเลขที่ต้องการทาย">
+            <button onclick="makeGuess()">ส่งคำตอบ</button>
+            
+            <div class="attempts-display" id="attempts-container">
+                <!-- จำนวนครั้งจะถูกสร้างด้วย JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAttempts = 0;
+        let maxAttempts = 0;
+        
+        async function startGame() {
+            let difficulty = document.getElementById("difficulty").value;
+            let response = await fetch("/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ difficulty: difficulty })
+            });
+            
+            let data = await response.json();
+            document.getElementById("status").innerText = "เกมเริ่มต้นแล้ว! ทายตัวเลขระหว่าง " + 
+                data.range[0] + " ถึง " + data.range[1];
+            
+            document.getElementById("min-range").innerText = data.range[0];
+            document.getElementById("max-range").innerText = data.range[1];
+            document.getElementById("game-controls").style.display = "block";
+            
+            // สร้างตัวแสดงจำนวนครั้งที่ทายได้
+            maxAttempts = data.attempts;
+            currentAttempts = maxAttempts;
+            updateAttemptsDisplay();
+            
+            // รีเซ็ตค่า input
+            document.getElementById("guessInput").value = "";
+            document.getElementById("guessInput").focus();
+        }
+
+        async function makeGuess() {
+            let guessInput = document.getElementById("guessInput");
+            let guess = parseInt(guessInput.value);
+            
+            if (isNaN(guess)) {
+                alert("กรุณาใส่ตัวเลข");
+                return;
+            }
+            
+            let response = await fetch("/guess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ guess: guess })
+            });
+            
+            let data = await response.json();
+            
+            if (data.error) {
+                document.getElementById("status").innerText = data.error;
+                return;
+            }
+            
+            document.getElementById("status").innerText = data.message;
+            
+            // อัพเดทช่วงตัวเลข (ถ้ามี)
+            if (data.range) {
+                document.getElementById("min-range").innerText = data.range[0];
+                document.getElementById("max-range").innerText = data.range[1];
+                currentAttempts = data.attempts_left;
+                updateAttemptsDisplay();
+            } else {
+                // เกมจบแล้ว
+                document.getElementById("game-controls").style.display = "none";
+            }
+            
+            // รีเซ็ตค่า input
+            guessInput.value = "";
+            guessInput.focus();
+        }
+        
+        function updateAttemptsDisplay() {
+            const container = document.getElementById("attempts-container");
+            container.innerHTML = "";
+            
+            for (let i = 0; i < maxAttempts; i++) {
+                const indicator = document.createElement("div");
+                indicator.className = "attempt-indicator";
+                if (i >= currentAttempts) {
+                    indicator.classList.add("attempt-used");
+                }
+                container.appendChild(indicator);
+            }
+        }
+        
+        // จัดการการกด Enter ในช่อง input
+        document.getElementById("guessInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                makeGuess();
+            }
+        });
+    </script>
+</body>
+</html>
