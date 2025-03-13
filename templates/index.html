@@ -34,7 +34,6 @@
             <button onclick="makeGuess()">ส่งคำตอบ</button>
             
             <div class="attempts-display" id="attempts-container">
-                <!-- จำนวนครั้งจะถูกสร้างด้วย JavaScript -->
             </div>
         </div>
     </div>
@@ -59,7 +58,7 @@
             document.getElementById("max-range").innerText = data.range[1];
             document.getElementById("game-controls").style.display = "block";
             
-            // สร้างตัวแสดงจำนวนครั้งที่ทายได้
+            // สร้างจำนวนครั้ง
             maxAttempts = data.attempts;
             currentAttempts = maxAttempts;
             updateAttemptsDisplay();
@@ -93,7 +92,7 @@
             
             document.getElementById("status").innerText = data.message;
             
-            // อัพเดทช่วงตัวเลข (ถ้ามี)
+            // อัพเดทตัวเลข
             if (data.range) {
                 document.getElementById("min-range").innerText = data.range[0];
                 document.getElementById("max-range").innerText = data.range[1];
